@@ -1,27 +1,48 @@
-# MesaFarta
+# 🍽️ Mesa Farta — MVP
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.21.
+**Sistema de Gestão de Doações Perecíveis** — PWA Offline-First para a Cozinha Comunitária "Mesa Farta" (200 refeições/dia).
 
-## Development server
+## 🎯 Problema
+- 15-20% desperdício por validade invisível
+- Compras de emergência 40% mais caras
+- 8h/mês em relatórios manuais
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+## 🛠️ Stack
+- **Frontend**: Angular 18 LTS + TypeScript + Angular Material + CDK
+- **PWA**: Service Worker (Workbox) + IndexedDB (Dexie.js) — Offline-First
+- **Backend**: Supabase (PostgreSQL 15 + Auth + Realtime + Storage + Edge Functions)
+- **Deploy**: Vercel (GRU1 São Paulo) + GitHub Actions CI/CD
 
-## Code scaffolding
+## 📱 Fluxos Principais (MVP)
+| RF | Funcionalidade | Critério Crítico |
+|----|----------------|------------------|
+| RF01 | Entrada Doação Offline + OCR | ≤30s/item Android entrada (2GB RAM) |
+| RF02 | Painel Itens Críticos | ≤500ms classificação (vermelho/amarelo/verde) |
+| RF03 | Sugestão Preparo Nutricional | Match itens críticos + receitas + metas |
+| RF04 | Checklist Voluntários | Touch 48dp, TalkBack, navegação linear |
+| RF05 | Relatório PDF/CSV | Edge Function ≤10s, tagged PDF acessível |
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## ♿ Acessibilidade
+WCAG 2.1 AA verificável no CI: toque ≥48dp, fonte ≥16px, contraste 4.5:1, LiveAnnouncer, navegação teclado, cor+ícone+texto.
 
-## Build
+## 🔒 Segurança
+- Magic Link exclusivo (zero senhas)
+- RLS em todas tabelas
+- CSP rigoroso + Zod validação dupla (client+server)
+- Upload: magic bytes + sharp re-encode + signed URLs
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+## 🚀 Como rodar
+```bash
+npm ci
+npm run dev          # localhost:4200
+npm run build        # production build
+npm run test         # unit + integration
+npm run e2e          # Playwright E2E
+```
 
-## Running unit tests
+## 📋 Commits Semânticos
+Seguimos [Conventional Commits](https://www.conventionalcommits.org/):
+`feat`, `fix`, `refactor`, `perf`, `a11y`, `security`, `docs`, `test`, `chore`, `build`, `ci`
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## 📄 Licença
+MIT — Projeto educacional Experiência Prática II.
