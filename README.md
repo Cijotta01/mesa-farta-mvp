@@ -230,6 +230,69 @@ npm run lint              # ESLint flat config
 
 ---
 
+## 🔧 Auto-Revisão Técnica: Refatoração e Arquitetura
+
+> **Comentário técnico registrado no PR #1** — Decisões arquiteturais e refatoração
+
+### 🏗️ Decisões Arquiteturais e Refatoração
+
+**1. Arquitetura Offline-First com PWA + IndexedDB (Dexie.js)**
+- Optei por **Service Worker (Workbox) + IndexedDB via Dexie.js** em vez de soluções baseadas em localStorage ou cookies. Isso garante:
+  - Persistência transacional (ACID) para doações/itens/tasks offline
+  - Índices compostos (`expiration_date + status`) para queries do painel crítico ≤500ms
+  - Sync queue assíncrona com retry exponencial e resolução de conflitos *last-write-wins* baseada em `updated_at`
+
+**2. Separação em Camadas (Core / Shared / Features)**
+```
+src/app/
+├── core/           # Singletons: Auth, Sync, Storage, Services
+├── shared/         # Models, Validators (Zod), Components reutilizáveis
+└── features/       # Lazy-loaded: Dashboard, DonationEntry, Operations
+```
+- **Core**: Serviços de domínio puros, injetáveis em `root`, sem dependência de UI
+- **Shared**: Contratos tipados (Zod schemas) compartilhados client/server — validação idêntica offline e online
+- **Features**: Módulos roteados com `loadComponent`, code-splitting automático
+
+**3. Injeção de Dependência e Sinais (Angular 18)**
+- Uso de `inject()` + `signal()` + `computed()` em vez de `Observable`/`BehaviorSubject` para estado reativo local (ex: `AuthService.isAuthenticated`, `StockService.criticalItems`)
+- Reduz boilerplate de RxJS e melhora performance de change detection (`OnPush` ready)
+
+**4. OCR Offline em Web Worker (RF01)**
+- `OcrService` + `ocr.worker.ts` (Tesseract.js) — **não bloqueia UI thread**
+- Pré-processamento: downscale 800×600 + JPEG 0.8 antes do OCR → ~15-20s em Android 2GB RAM (dentro do limite ≤30s)
+- Fallback automático para entrada manual quando confiança <80%
+
+**5. Autenticação Magic Link + RLS (Zero Senhas)**
+- `Supabase Auth` com Magic Link → JWT com `role` no claim
+- **Row Level Security** em todas tabelas (8 policies) — autorização no banco, não só no frontend
+- Guards Angular (`CanActivateFn`) + Interceptor HTTP para UX, mas **RLS é a barreira real**
+
+**6. Edge Function para Relatórios (RF05)**
+- `generate-report` (Deno) → gera PDF/CSV serverless, retorna *signed URL* 15min
+- Remove carga do cliente e garante PDF tagged (acessível) + CSV UTF-8 BOM
+
+**7. Performance & Budgets**
+- `angular.json`: `initial ≤2MB`, `component ≤8KB`
+- Lazy loading: 3 chunks principais (~50-140KB gzipped)
+- OCR worker chunk separado (~22KB) — carrega só quando necessário
+
+---
+
+### 🔄 Pontos de Atenção / Próximas Refatorações
+
+| Item | Status | Ação |
+|------|--------|------|
+| ESLint flat config | ⚠️ Parcial | Migrar `.eslintrc.js` → `eslint.config.js` completo (v9+) |
+| Testes E2E | ⏳ Pendente | Instalar Playwright browsers no CI + rodar `critical-flows.spec.ts` |
+| OCR Real | 🧪 Mock | Substituir mock por Tesseract.js worker real + benchmark |
+| Sync Conflict Resolution | 📝 Básico | Adicionar versionamento vetorial se multi-device |
+
+---
+
+**Resumo**: A arquitetura prioriza **funcionamento offline garantido**, **validação compartilhada client/server**, **segurança no banco (RLS)** e **performance mobile**. A modularização em Core/Shared/Features permite evolução independente de cada RF sem acoplamento.
+
+---
+
 ## 🔄 CI/CD Pipeline (GitHub Actions)
 
 **Workflow**: `.github/workflows/ci.yml`
