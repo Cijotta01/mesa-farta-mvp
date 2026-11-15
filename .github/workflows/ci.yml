@@ -19,13 +19,12 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: package-lock.json
-          force-cache: false
       - run: node --version && npm --version
       - run: npm ci --legacy-peer-deps
       - run: npm run test:ci
       - run: npm run build -- --configuration=production
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: success()
         with:
           name: build-output
           path: dist/
