@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 env:
-  NODE_VERSION: '22.14'
+  NODE_VERSION: '22.22.3'
 
 jobs:
   lint-test-build:
@@ -19,9 +19,10 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: package-lock.json
+          force-cache: false
       - run: node --version && npm --version
       - run: npm ci --legacy-peer-deps
-      - run: npx eslint src --ext .ts,.html --max-warnings=0
+      - run: npx eslint --config .eslintrc.js src --ext .ts,.html --max-warnings=0
       - run: npm run test:ci
       - run: npm run build -- --configuration=production
       - uses: actions/upload-artifact@v4
@@ -41,6 +42,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: package-lock.json
+          force-cache: false
       - run: npm ci --legacy-peer-deps
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
@@ -62,6 +64,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: package-lock.json
+          force-cache: false
       - run: npm ci --legacy-peer-deps
       - run: npx playwright install --with-deps chromium
       - name: Run RF01 performance test
