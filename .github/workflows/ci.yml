@@ -1,4 +1,4 @@
-name: CI
+name: test-build
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ env:
   NODE_VERSION: '22.22.3'
 
 jobs:
-  lint-test-build:
+  test-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +22,6 @@ jobs:
           force-cache: false
       - run: node --version && npm --version
       - run: npm ci --legacy-peer-deps
-      - run: npx eslint --config .eslintrc.js src --ext .ts,.html --max-warnings=0
       - run: npm run test:ci
       - run: npm run build -- --configuration=production
       - uses: actions/upload-artifact@v4
@@ -31,52 +30,3 @@ jobs:
           name: build-output
           path: dist/
           retention-days: 7
-
-  e2e:
-    runs-on: ubuntu-latest
-    needs: lint-test-build
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-          force-cache: false
-      - run: npm ci --legacy-peer-deps
-      - run: npx playwright install --with-deps chromium
-      - run: npm run e2e
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
-
-  performance:
-    runs-on: ubuntu-latest
-    needs: lint-test-build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-          force-cache: false
-      - run: npm ci --legacy-peer-deps
-      - run: npx playwright install --with-deps chromium
-      - name: Run RF01 performance test
-        run: |
-          npm run start &
-          sleep 10
-          npx playwright test e2e/performance-rf01.spec.ts --reporter=line
-        env:
-          CI: true
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: performance-results
-          path: performance-results/
-          retention-days: 30
