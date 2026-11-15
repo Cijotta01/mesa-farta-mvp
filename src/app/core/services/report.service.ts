@@ -1,17 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { SupabaseClient, createClient } from '@supabase/supabase-js';
-import { environment } from '../../../environments/environment';
 import { Report, ReportGenerateInput, ReportMetrics, WasteReason } from '../../shared/models';
 import { AuthService } from '../auth/auth.service';
+import { SupabaseService } from '../services/supabase.service';
 
 @Injectable({ providedIn: 'root' })
 export class ReportService {
-  private supabase: SupabaseClient;
+  private supabase = inject(SupabaseService).client;
   private auth = inject(AuthService);
-
-  constructor() {
-    this.supabase = createClient(environment.supabaseUrl, environment.supabaseAnonKey);
-  }
 
   /**
    * Gera relatório via Edge Function (serverless).
