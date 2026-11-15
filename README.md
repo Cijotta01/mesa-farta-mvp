@@ -293,20 +293,33 @@ src/app/
 
 ---
 
+## ✅ Status de Validação (Entrega Atividade)
+
+| Item | Status | Observação |
+|------|--------|------------|
+| Build production | ✅ Validado | 1.12 MB |
+| Testes unitários | ✅ Validado | 86 testes passing |
+| Lint (ESLint) | ❌ Não validado | Flat config pendente |
+| Testes E2E (Playwright) | ❌ Não validado | Pendente install browsers |
+| OCR Real (Tesseract.js) | ❌ Não validado | Mock apenas |
+| Performance RF01 | ❌ Não validado | Mock apenas |
+| Acessibilidade (axe-core) | ❌ Não validado | Pendente |
+| Deploy Vercel + Supabase | ❌ Manual | Requer config manual |
+
+---
+
 ## 🔄 CI/CD Pipeline (GitHub Actions)
 
-**Workflow**: `.github/workflows/ci.yml`
+**Workflow**: `.github/workflows/ci.yml` (test-build)
 
 | Job | Descrição | Status |
 |-----|-----------|--------|
-| `lint-test-build` | `npm ci --legacy-peer-deps` → `eslint` → `test:ci` → `build` | ✅ Rodando |
-| `e2e` | Playwright (desktop + mobile + offline) | ⏳ Aguardando |
-| `performance` | RF01 benchmark (mediana 5 runs, ≤30s) | ⏳ Push only |
+| `test-build` | `npm ci --legacy-peer-deps` → `npm run test:ci` → `npm run build` | ✅ Validado |
 
 **Configurações críticas:**
 - Node **22.22.3** (compatível com lint-staged@17.6.0)
 - `npm ci --legacy-peer-deps` (resolve conflitos de peer deps)
-- `cache-dependency-path: package-lock.json` + `force-cache: false`
+- `cache-dependency-path: package-lock.json`
 - `node --version && npm --version` no log para auditoria
 
 ---
