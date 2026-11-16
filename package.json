@@ -33,6 +33,7 @@
     "@fontsource/material-icons": "^5.3.0",
     "@supabase/supabase-js": "^2.119.0",
     "dexie": "^4.4.7",
+    "material-icons": "^1.13.14",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "uuid": "^14.0.3",
