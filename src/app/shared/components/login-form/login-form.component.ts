@@ -5,6 +5,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { CommonModule } from '@angular/common';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 
@@ -21,6 +22,7 @@ import { AuthService } from '../../../core/auth/auth.service';
     MatFormFieldModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatSnackBarModule,
   ],
   template: `
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login-form" novalidate>
@@ -44,22 +46,33 @@ import { AuthService } from '../../../core/auth/auth.service';
         }
       </mat-form-field>
 
-      <button
-        mat-flat-button
-        color="primary"
-        type="submit"
-        class="submit-btn full-width"
-        [disabled]="form.invalid || loading()"
-        style="min-height: 48px; margin-top: 16px;"
-      >
+      <ng-container>
         @if (loading()) {
-          <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
-          <span>Enviando...</span>
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            class="submit-btn full-width"
+            disabled
+            style="min-height: 48px; margin-top: 16px;"
+          >
+            <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+            <span>Enviando...</span>
+          </button>
         } @else {
-          <mat-icon>send</mat-icon>
-          <span>Enviar link mágico</span>
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            class="submit-btn full-width"
+            [disabled]="form.invalid"
+            style="min-height: 48px; margin-top: 16px;"
+          >
+            <mat-icon>send</mat-icon>
+            <span>Enviar link mágico</span>
+          </button>
         }
-      </button>
+      </ng-container>
 
       <p class="login-note" aria-live="polite" role="status">
         <mat-icon>info</mat-icon>

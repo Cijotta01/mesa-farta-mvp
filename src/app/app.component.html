@@ -37,12 +37,12 @@
 </mat-toolbar>
 
 <!-- Conteúdo principal -->
-<main class="app-content" role="main">
-  <router-outlet></router-outlet>
-</main>
-
-<!-- Bottom Navigation (mobile-first, 48dp touch targets) -->
 @if (isAuthenticated()) {
+  <main class="app-content" role="main">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Bottom Navigation (mobile-first, 48dp touch targets) -->
   <nav class="bottom-nav" role="navigation" aria-label="Navegação principal">
     @for (item of getNavItems(); track item.route) {
       <a
@@ -60,10 +60,8 @@
       </a>
     }
   </nav>
-}
-
-<!-- Login Prompt (quando não autenticado) -->
-@if (!isAuthenticated()) {
+} @else {
+  <!-- Login Prompt (quando não autenticado) -->
   <div class="login-prompt" role="region" aria-label="Acesso ao sistema">
     <mat-icon class="login-icon">restaurant</mat-icon>
     <h1>Mesa Farta</h1>

@@ -24,8 +24,8 @@
 .app-content {
   padding: 16px;
   padding-bottom: 100px; // espaço para bottom nav
-  min-height: calc(100vh - 64px);
   background-color: #f5f5f5;
+  min-height: calc(100vh - 64px);
 }
 
 /* ===== Offline Banner ===== */
@@ -125,7 +125,6 @@
 
 /* ===== Login Prompt ===== */
 .login-prompt {
-  min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -133,6 +132,7 @@
   padding: 24px;
   text-align: center;
   background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+  min-height: calc(100vh - 64px);
 }
 
 .login-icon {

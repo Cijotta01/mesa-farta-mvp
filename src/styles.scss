@@ -1,4 +1,16 @@
 /* You can add global styles to this file, and also import other style files */
 
+@import '@fontsource/material-icons';
+
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Remove default tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure mat-form-field labels don't overlap on mobile */
+.mat-mdc-form-field {
+  --mdc-filled-text-field-container-shape: 4px;
+}
