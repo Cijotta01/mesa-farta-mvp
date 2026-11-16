@@ -31,6 +31,7 @@
     "@angular/router": "^18.2.0",
     "@angular/service-worker": "^18.2.0",
     "@supabase/supabase-js": "^2.119.0",
+    "@vercel/speed-insights": "^2.1.0",
     "dexie": "^4.4.7",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
