@@ -20,17 +20,10 @@ import { DonationService } from '../../core/services/donation.service';
 import { StockService } from '../../core/services/stock.service';
 import { Donor, DonationCreateInput, ItemCreateInput } from '../../shared/models';
 import { DexieService } from '../../core/storage/dexie.db';
+import { OcrService, OcrWorkerResult } from '../../core/ocr/ocr.service';
+import { OcrParsedResult } from '../../core/ocr/ocr.worker';
 
-interface OcrResult {
-  product_name?: string;
-  category?: 'hortifruti' | 'proteina' | 'grao' | 'laticinio' | 'panificado' | 'outro';
-  quantity_kg?: number;
-  unit?: 'kg' | 'un' | 'l';
-  expiration_date?: string;
-  lot_code?: string;
-  barcode?: string;
-  confidence: number;
-}
+interface OcrResult extends OcrParsedResult {}
 
 @Component({
   selector: 'app-donation-entry',
@@ -114,7 +107,7 @@ interface OcrResult {
             @if (ocrLoading()) {
               <div class="ocr-status" role="status" aria-live="polite">
                 <mat-spinner diameter="24"></mat-spinner>
-                <span>OCR em andamento... (Web Worker)</span>
+                <span>OCR em andamento... {{ ocrProgress() > 0 ? ocrProgress() + '%' : '(Web Worker)' }}</span>
               </div>
             }
 
@@ -561,12 +554,14 @@ export class DonationEntryComponent implements AfterViewInit, OnDestroy {
   private donationService = inject(DonationService);
   private stock = inject(StockService);
   private dexie = inject(DexieService);
+  private ocrService = inject(OcrService);
   private snackBar = inject(MatSnackBar);
   private announcer = inject(LiveAnnouncer);
 
   // Stepper state
   currentStep = signal(0);
   ocrLoading = signal(false);
+  ocrProgress = signal(0);
   ocrError = signal(false);
   ocrConfidence = signal(0);
   ocrResult = signal<OcrResult | null>(null);
@@ -606,6 +601,9 @@ export class DonationEntryComponent implements AfterViewInit, OnDestroy {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     this.confirmForm.patchValue({ expiration_date: tomorrow.toISOString().split('T')[0] });
+
+    // Subscreve progresso do OCR
+    this.ocrService.progress$.subscribe((p) => this.ocrProgress.set(p));
   }
 
   ngOnDestroy(): void {
@@ -662,72 +660,79 @@ export class DonationEntryComponent implements AfterViewInit, OnDestroy {
     if (!file) return;
 
     // Valida tipo e tamanho
-    if (!file.type.startsWith('image/')) {
-      this.showError('Selecione uma imagem válida');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      this.showError('Imagem muito grande (máx. 5MB)');
+    const validation = this.ocrService.validateImageFile(file);
+    if (!validation.valid) {
+      this.showError(validation.error!);
       return;
     }
 
-    // Preview
+    // Preview imediato
     const reader = new FileReader();
     reader.onload = (e) => this.selectedImage.set(e.target?.result as string);
     reader.readAsDataURL(file);
 
-    // Processa OCR em Web Worker (simulado aqui)
+    // Processa OCR em background
     this.processOcr(file);
   }
 
   async processOcr(file?: File): Promise<void> {
+    if (!file && !this.selectedImage()) return;
+
     this.ocrLoading.set(true);
+    this.ocrProgress.set(0);
     this.ocrError.set(false);
 
     try {
-      // TODO: Implementar Web Worker com Tesseract.js
-      // Por enquanto, simula resultado
-      await new Promise(r => setTimeout(r, 1500));
+      // Se arquivo fornecido, pré-processa; senão usa imagem já selecionada
+      let imageData = this.selectedImage();
+      if (file) {
+        imageData = await this.ocrService.preprocessImage(file);
+        this.selectedImage.set(imageData); // Atualiza preview com versão otimizada
+      }
 
-      // Mock OCR result para desenvolvimento
-      const mockResult: OcrResult = {
-        product_name: 'Tomate',
-        category: 'hortifruti',
-        quantity_kg: 5.0,
-        unit: 'kg',
-        expiration_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        lot_code: 'L12345',
-        barcode: '7891234567890',
-        confidence: 92,
-      };
+      if (!imageData) {
+        throw new Error('Nenhuma imagem para processar');
+      }
 
-      this.ocrResult.set(mockResult);
-      this.ocrConfidence.set(mockResult.confidence);
+      // Chama OCR real via Web Worker
+      const result = await this.ocrService.recognize(imageData);
 
-      // Preenche formulário
+      if (!result.success) {
+        throw new Error(result.error || 'Falha no OCR');
+      }
+
+      const parsed = result.data!;
+      this.ocrResult.set(parsed);
+      this.ocrConfidence.set(result.confidence);
+
+      // Preenche formulário com dados extraídos
       this.confirmForm.patchValue({
-        product_name: mockResult.product_name,
-        category: mockResult.category,
-        quantity_kg: mockResult.quantity_kg,
-        unit: mockResult.unit,
-        expiration_date: mockResult.expiration_date,
-        lot_code: mockResult.lot_code,
-        barcode: mockResult.barcode,
+        product_name: parsed.product_name ?? '',
+        category: parsed.category ?? null,
+        quantity_kg: parsed.quantity_kg ?? null,
+        unit: parsed.unit ?? 'kg',
+        expiration_date: parsed.expiration_date ?? '',
+        lot_code: parsed.lot_code ?? '',
+        barcode: parsed.barcode ?? '',
       });
 
-      // Alerta se confiança baixa
-      if (mockResult.confidence < 80) {
+      // Alerta se confiança baixa (fallback para entrada manual)
+      if (result.confidence < 80) {
         this.ocrError.set(true);
-        this.announcer.announce('OCR incerto. Por favor, confira os campos.');
+        this.announcer.announce(`OCR incerto (${result.confidence}%). Por favor, confira os campos.`);
       } else {
-        this.announcer.announce('OCR concluído. Dados preenchidos automaticamente.');
+        this.announcer.announce(`OCR concluído com ${result.confidence}% de confiança. Dados preenchidos automaticamente.`);
       }
+
+      console.log('[OCR] Processado em', result.processingTimeMs, 'ms:', parsed);
     } catch (error) {
       console.error('[OCR] Erro:', error);
       this.ocrError.set(true);
       this.ocrConfidence.set(0);
+      this.announcer.announce('Erro no OCR. Preencha os campos manualmente.');
     } finally {
       this.ocrLoading.set(false);
+      this.ocrProgress.set(0);
     }
   }
 

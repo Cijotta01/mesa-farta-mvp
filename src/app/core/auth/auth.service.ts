@@ -1,15 +1,15 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { SupabaseClient, createClient, User, Session } from '@supabase/supabase-js';
-import { environment } from '../../../environments/environment';
+import { User, Session } from '@supabase/supabase-js';
 import { Router } from '@angular/router';
 import { UserProfile, UserRole, AuthUser } from '../../shared/models';
 import { DexieService } from '../storage/dexie.db';
+import { SupabaseService } from '../services/supabase.service';
 
 export type { UserRole };
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private supabase: SupabaseClient;
+  private supabase = inject(SupabaseService).client;
   private router = inject(Router);
   private dexie = inject(DexieService);
 
@@ -31,7 +31,6 @@ export class AuthService {
   isManager = computed(() => this.role() === 'manager');
 
   constructor() {
-    this.supabase = createClient(environment.supabaseUrl, environment.supabaseAnonKey);
     this.initAuth();
   }
 

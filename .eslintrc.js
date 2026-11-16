@@ -1,5 +1,4 @@
 module.exports = {
-  root: true,
   ignorePatterns: ['projects/**/*'],
   plugins: ['@angular-eslint', '@typescript-eslint'],
   overrides: [
